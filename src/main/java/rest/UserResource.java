@@ -1,6 +1,8 @@
 package rest;
 
+import entities.Role;
 import entities.User;
+import facades.UserFacade;
 import java.util.List;
 import javax.annotation.security.RolesAllowed;
 import javax.persistence.EntityManager;
@@ -21,12 +23,38 @@ import utils.EMF_Creator;
 public class UserResource {
 
     private static EntityManagerFactory EMF = EMF_Creator.createEntityManagerFactory(EMF_Creator.DbSelector.DEV, EMF_Creator.Strategy.CREATE);
+    private static final UserFacade FACADE =  UserFacade.getUserFacade(EMF);
 
     @Context
     private UriInfo context;
 
     @Context
     SecurityContext securityContext;
+    
+    {
+        if(FACADE.getUserCount() < 1){
+            EntityManagerFactory emf = EMF_Creator.createEntityManagerFactory(EMF_Creator.DbSelector.DEV, EMF_Creator.Strategy.CREATE);
+            EntityManager em = emf.createEntityManager();
+
+            User user = new User("user", "user123");
+            User admin = new User("admin", "admin123");
+            User both = new User("user_admin", "user_admin123");
+
+            em.getTransaction().begin();
+            Role userRole = new Role("user");
+            Role adminRole = new Role("admin");
+            user.addRole(userRole);
+            admin.addRole(adminRole);
+            both.addRole(userRole);
+            both.addRole(adminRole);
+            em.persist(userRole);
+            em.persist(adminRole);
+            em.persist(user);
+            em.persist(admin);
+            em.persist(both);
+            em.getTransaction().commit();
+        }
+    }
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
